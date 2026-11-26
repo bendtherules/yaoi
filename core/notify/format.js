@@ -16,7 +16,7 @@ function line(a, subsidiary) {
   if (a.ram) bits.push(`${a.ram} GB`);
   return {
     head: `${a.flag} ${a.model || a.name} — ${a.city}`,
-    spec: [a.memoryLabel, a.storageLabel].filter(Boolean).join(' · '),
+    spec: [a.cpu, a.memoryLabel, a.storageLabel].filter(Boolean).join(' · '),
     price: a.priceText,
     avail: a.availLabel,
     code: a.planCode,

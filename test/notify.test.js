@@ -247,6 +247,12 @@ test('format: one alert names the machine and the city', () => {
   assert.equal(b.subtitle, 'in stock now');
 });
 
+test('format: the CPU is part of the spec line', () => {
+  const b = buildBatch([alert()]);
+  assert.match(b.lines[0].spec, /Intel Xeon-D 2141I/);
+  assert.match(asText(b), /Intel Xeon-D 2141I/);
+});
+
 test('format: many alerts are batched and the overflow is stated, not truncated silently', () => {
   const many = Array.from({ length: 30 }, (_, i) => alert({ fqn: `x.${i}` }));
   const b = buildBatch(many);
