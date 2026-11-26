@@ -41,6 +41,13 @@ node server.js        # Node >= 18. No dependencies, no build step, no install.
 
 Open <http://localhost:4321>. It polls every 60 seconds and streams updates.
 
+Or in Docker (see `Dockerfile`):
+
+```bash
+docker build -t yaoi .
+docker run --rm -p 4321:4321 -v "$PWD/data:/app/data" yaoi
+```
+
 ```bash
 npm test              # 94 tests, node:test
 node bin/check.js --channels        # which notification channels are configured
