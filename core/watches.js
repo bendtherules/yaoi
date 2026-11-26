@@ -22,6 +22,15 @@ function uuid() {
   return 'w-' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
 
+// A price bound is a positive monthly amount in the catalogue currency.
+// Zero, negatives and non-numbers mean "no bound" rather than a bound of 0,
+// which would otherwise be a watch that silently matches nothing.
+// Example: priceLimit('10000') -> 10000, priceLimit(-5) -> null.
+function priceLimit(v) {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 // Accepts "23:00", "2300", 23 -> minutes since midnight, or null.
 function parseClock(v) {
   if (v === null || v === undefined || v === '') return null;
@@ -54,6 +63,8 @@ export function defaultWatches() {
       planCodes: [],
       search: '',
       minRamGB: null,
+      minPrice: null,
+      maxPrice: null,
       inStockOnly: true,
       includeComingSoon: false,
       notify: true,
@@ -80,6 +91,8 @@ export function normalizeWatch(w = {}) {
     planCodes: arr(w.planCodes),
     search: (w.search || '').toString().slice(0, 120),
     minRamGB: Number(w.minRamGB) > 0 ? Number(w.minRamGB) : null,
+    minPrice: priceLimit(w.minPrice),
+    maxPrice: priceLimit(w.maxPrice),
     inStockOnly: !!w.inStockOnly,
     includeComingSoon: !!w.includeComingSoon,
     notify: w.notify !== false,
@@ -117,6 +130,12 @@ export function configMatches(c, w) {
   }
   if (w.planCodes.length && !w.planCodes.includes(c.planCode)) return false;
   if (w.minRamGB && (c.ramGB || 0) < w.minRamGB) return false;
+  // Price bounds are monthly catalogue prices. A configuration with no price
+  // (non-eco ranges are absent from the public eco catalogue) cannot be checked
+  // against a bracket, so an explicit bound excludes it rather than assuming it
+  // is cheap enough.
+  if (w.minPrice != null && (c.price == null || c.price < w.minPrice)) return false;
+  if (w.maxPrice != null && (c.price == null || c.price > w.maxPrice)) return false;
   if (w.search) {
     const q = w.search.toLowerCase();
     const hay = `${c.fqn} ${c.name} ${c.memoryLabel} ${c.storageLabel} ${c.rangeLabel}`.toLowerCase();
@@ -187,6 +206,9 @@ export function criteriaSummary(w) {
   if (w.storageKinds.length) parts.push(w.storageKinds.join('/'));
   if (w.storageContains) parts.push(`storage~"${w.storageContains}"`);
   if (w.minRamGB) parts.push(`≥${w.minRamGB}GB RAM`);
+  if (w.minPrice != null && w.maxPrice != null) parts.push(`price ${w.minPrice}–${w.maxPrice}`);
+  else if (w.maxPrice != null) parts.push(`price ≤ ${w.maxPrice}`);
+  else if (w.minPrice != null) parts.push(`price ≥ ${w.minPrice}`);
   if (w.planCodes.length) parts.push(w.planCodes.join(','));
   if (w.search) parts.push(`"${w.search}"`);
   parts.push(w.inStockOnly ? 'in-stock only' : 'incl. delayed');
@@ -255,6 +277,8 @@ export function runWatches(configs, watches, state, { withAlerts = false, now = 
         storageContains: w.storageContains,
         planCodes: w.planCodes,
         minRamGB: w.minRamGB,
+        minPrice: w.minPrice,
+        maxPrice: w.maxPrice,
         search: w.search,
         inStockOnly: w.inStockOnly,
         includeComingSoon: w.includeComingSoon,

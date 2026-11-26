@@ -134,6 +134,7 @@ function normRule(rule) {
     ranges: rule.ranges || [], storageKinds: rule.storageKinds || [],
     storageContains: rule.storageContains || '', planCodes: rule.planCodes || [],
     search: rule.search || '', minRamGB: rule.minRamGB || null,
+    minPrice: rule.minPrice ?? null, maxPrice: rule.maxPrice ?? null,
     inStockOnly: !!rule.inStockOnly, includeComingSoon: !!rule.includeComingSoon,
   };
 }
@@ -808,6 +809,8 @@ function openModal(w) {
   $('#modal-title').textContent = w ? 'Edit watch' : 'New watch';
   $('#w-name').value = w?.name || '';
   $('#w-ram').value = rule.minRamGB || '';
+  $('#w-price-min').value = rule.minPrice ?? '';
+  $('#w-price-max').value = rule.maxPrice ?? '';
   $('#w-cool').value = w?.cooldownMinutes || '';
   $('#w-q1').value = hhmm(w?.quietFrom ?? null);
   $('#w-q2').value = hhmm(w?.quietTo ?? null);
@@ -859,6 +862,8 @@ async function submitWatch(e) {
     storageContains: $('#w-storage').value.trim(),
     planCodes: $('#w-plans').value.split(',').map((s) => s.trim()).filter(Boolean),
     minRamGB: $('#w-ram').value ? Number($('#w-ram').value) : null,
+    minPrice: $('#w-price-min').value ? Number($('#w-price-min').value) : null,
+    maxPrice: $('#w-price-max').value ? Number($('#w-price-max').value) : null,
     cooldownMinutes: $('#w-cool').value ? Number($('#w-cool').value) : 0,
     quietFrom: clockToMinutes($('#w-q1').value),
     quietTo: clockToMinutes($('#w-q2').value),

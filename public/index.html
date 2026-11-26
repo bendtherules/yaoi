@@ -127,6 +127,18 @@
 
       <div class="two">
         <div class="field">
+          <label class="lab" for="w-price-min">Cheapest price (monthly)</label>
+          <input id="w-price-min" name="minPrice" type="number" min="0" step="1" placeholder="any" />
+        </div>
+        <div class="field">
+          <label class="lab" for="w-price-max">Most expensive (monthly)</label>
+          <input id="w-price-max" name="maxPrice" type="number" min="0" step="1" placeholder="any" />
+          <span class="help">In the catalogue currency. Ranges with no public price are left out when either bound is set.</span>
+        </div>
+      </div>
+
+      <div class="two">
+        <div class="field">
           <label class="lab" for="w-q1">Stay quiet from</label>
           <input id="w-q1" name="quietFrom" type="time" />
         </div>

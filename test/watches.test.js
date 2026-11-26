@@ -12,6 +12,7 @@ const cfg = (over = {}) => ({
   fqn: 'x.1', planCode: '24sys022', name: 'SYS-2 | Intel Xeon-D 2141I',
   model: 'SYS-2', cpu: 'Intel Xeon-D 2141I', range: 'soyoustart', rangeLabel: 'So you Start',
   ramGB: 128, memoryLabel: '128 GB ECC 2666',
+  price: 49.99, priceText: 'C$49.99', currency: 'CAD',
   storageLabel: '2×1.92 TB NVMe', storageKind: 'NVMe', storageKinds: ['NVMe'],
   storageRaw: 'softraid-2x1920nvme', systemStorageRaw: '',
   dc: { bhs: '1H-high', gra: '24H', fra: 'unavailable' },
@@ -33,12 +34,15 @@ test('an empty body must not become a watch that matches everything', () => {
 test('normalise: hostile input is coerced, not trusted', () => {
   const w = normalizeWatch({
     name: 'x'.repeat(500), countries: 'CA', channels: ['telegram', 'nope'],
-    minRamGB: -5, cooldownMinutes: 99999, quietFrom: '99:99', storageKinds: [1, 'NVMe'],
+    minRamGB: -5, minPrice: 'abc', maxPrice: -1,
+    cooldownMinutes: 99999, quietFrom: '99:99', storageKinds: [1, 'NVMe'],
   });
   assert.equal(w.name.length, 120);
   assert.deepEqual(w.countries, []);          // a string is not a list
   assert.deepEqual(w.channels, ['telegram']); // unknown channel dropped
   assert.equal(w.minRamGB, null);
+  assert.equal(w.minPrice, null);            // junk is "no bound", not 0
+  assert.equal(w.maxPrice, null);
   assert.equal(w.cooldownMinutes, 1440);      // clamped
   assert.equal(w.quietFrom, null);            // nonsense clock rejected
   assert.deepEqual(w.storageKinds, ['NVMe']);
@@ -58,6 +62,19 @@ test('match: storage kind, ram floor, range, plan code', () => {
   assert.ok(!configMatches(c, normalizeWatch({ ranges: ['kimsufi'] })));
   assert.ok(configMatches(c, normalizeWatch({ planCodes: ['24sys022'] })));
   assert.ok(!configMatches(c, normalizeWatch({ planCodes: ['24sk202'] })));
+});
+
+test('match: price bracket uses the monthly catalogue price', () => {
+  const priced = cfg({ price: 9000 });
+  // No price means "not in the public catalogue", which an explicit bracket
+  // cannot satisfy — it must not be treated as free.
+  const unpriced = cfg({ price: null });
+  assert.ok(configMatches(priced, normalizeWatch({ maxPrice: 10000 })));
+  assert.ok(!configMatches(priced, normalizeWatch({ maxPrice: 8000 })));
+  assert.ok(configMatches(priced, normalizeWatch({ minPrice: 8000 })));
+  assert.ok(!configMatches(priced, normalizeWatch({ minPrice: 9500 })));
+  assert.ok(!configMatches(unpriced, normalizeWatch({ maxPrice: 10000 })));
+  assert.ok(configMatches(unpriced, normalizeWatch({})));
 });
 
 test('match: free-text storage search also covers systemStorage', () => {
@@ -198,11 +215,13 @@ test('alert state survives a round trip through JSON', () => {
 
 test('criteria read as a sentence a person can check', () => {
   const s = criteriaSummary(normalizeWatch({
-    countries: ['CA'], storageKinds: ['NVMe'], minRamGB: 64, quietFrom: '23:00', quietTo: '07:00',
+    countries: ['CA'], storageKinds: ['NVMe'], minRamGB: 64, maxPrice: 10000,
+    quietFrom: '23:00', quietTo: '07:00',
   }));
   assert.match(s, /CA/);
   assert.match(s, /NVMe/);
   assert.match(s, /≥64GB RAM/);
+  assert.match(s, /price ≤ 10000/);
   assert.match(s, /quiet 23:00–07:00/);
 });
 

@@ -59,6 +59,8 @@ Every field is optional except `name`. Leave a list empty to mean "any".
 | `storageContains` | free text against the raw storage code, e.g. `"1920"` |
 | `planCodes` | `["24sk202"]` — those exact models only |
 | `minRamGB` | `64` |
+| `minPrice` | lowest monthly catalogue price to include, in the subsidiary's currency |
+| `maxPrice` | highest monthly catalogue price to include; configurations with no public price are excluded when either bound is set |
 | `inStockOnly` | `true` ignores 24h and 72h builds |
 | `includeComingSoon` | `true` includes machines not yet orderable |
 | `cooldownMinutes` | stay quiet this long after alerting about the same machine |
